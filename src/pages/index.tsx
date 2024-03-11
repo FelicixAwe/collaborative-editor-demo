@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
 import { io, Socket } from "socket.io-client";
-const SERVER_URL = "http://localhost:8080";
+// const SERVER_URL = "http://localhost:8080";
+const SERVER_URL = "https://nodejs-production-1c2e.up.railway.app/";
 
 export default function Home() {
   const [content, setContent] = useState("");
