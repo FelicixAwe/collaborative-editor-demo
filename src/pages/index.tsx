@@ -25,7 +25,9 @@ export default function Home() {
 
     // Handle socket
     socketRef.current.on("connect", () => {
+      if(socketRef.current){
       console.log("Connected to the server.", socketRef.current.id);
+      }
     });
     socketRef.current.on("disconnect", () => {
       console.log("Disconnected from the server");
