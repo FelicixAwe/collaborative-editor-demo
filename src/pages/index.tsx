@@ -71,5 +71,11 @@ export default function Home() {
     }
   };
 
-  return <textarea value={content} onChange={handleTextChange} />;
+  return (
+    <textarea
+      value={content}
+      onChange={handleTextChange}
+      placeholder="Type something here..."
+    />
+  );
 }
