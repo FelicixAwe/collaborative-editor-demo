@@ -36,7 +36,9 @@ export default function Home() {
     socketRef.current.on("update", (update) => {
       console.log("Received an update: ", update);
       const updateDoc = new Uint8Array(update);
-      Y.applyUpdate(ydocRef.current, updateDoc);
+      if(ydocRef.current){
+        Y.applyUpdate(ydocRef.current, updateDoc);
+      }
     });
     // Clean up when the component unmounts
     return () => {
