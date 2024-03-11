@@ -25,8 +25,8 @@ export default function Home() {
 
     // Handle socket
     socketRef.current.on("connect", () => {
-      if(socketRef.current){
-      console.log("Connected to the server.", socketRef.current.id);
+      if (socketRef.current) {
+        console.log("Connected to the server.", socketRef.current.id);
       }
     });
     socketRef.current.on("disconnect", () => {
@@ -36,14 +36,14 @@ export default function Home() {
     socketRef.current.on("update", (update) => {
       console.log("Received an update: ", update);
       const updateDoc = new Uint8Array(update);
-      if(ydocRef.current){
+      if (ydocRef.current) {
         Y.applyUpdate(ydocRef.current, updateDoc);
       }
     });
     // Clean up when the component unmounts
     return () => {
-      if(ydocRef.current){
-              ydocRef.current.destroy();
+      if (ydocRef.current) {
+        ydocRef.current.destroy();
       }
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -52,19 +52,21 @@ export default function Home() {
   }, []);
 
   // Function to handle text changes
-  const handleTextChange = (e) => {
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     console.log("About to send an update");
-    const ytext = ydocRef.current.getText("sharedText");
-    ydocRef.current?.transact(() => {
-      ytext.delete(0, ytext.length);
-      ytext.insert(0, e.target.value);
-    });
-    const update = Y.encodeStateAsUpdate(ydocRef.current);
-    if (socketRef.current) {
-      console.log("socketRef exists when about to send updates");
-      socketRef.current.emit("update", update);
-    } else {
-      console.log("socketRef doesn't exist when about to send updates");
+    if (ydocRef.current) {
+      const ytext = ydocRef.current.getText("sharedText");
+      ydocRef.current?.transact(() => {
+        ytext.delete(0, ytext.length);
+        ytext.insert(0, e.target.value);
+      });
+      const update = Y.encodeStateAsUpdate(ydocRef.current);
+      if (socketRef.current) {
+        console.log("socketRef exists when about to send updates");
+        socketRef.current.emit("update", update);
+      } else {
+        console.log("socketRef doesn't exist when about to send updates");
+      }
     }
   };
 
