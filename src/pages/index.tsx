@@ -42,7 +42,9 @@ export default function Home() {
     });
     // Clean up when the component unmounts
     return () => {
-      ydocRef.current.destroy();
+      if(ydocRef.current){
+              ydocRef.current.destroy();
+      }
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
