@@ -63,20 +63,20 @@ export default function Home() {
     if (ydocRef.current && diffs.length > 0) {
       const ytext = ydocRef.current.getText("sharedText");
       ydocRef.current.transact(() => {
-        ytext.insert(
-          ytext.length - 1,
-          e.target.value[e.target.value.length - 1],
-        );
-        // diffs.forEach((diff) => {
-        //   if (diff.type === "add" && typeof diff.value === "string") {
-        //     ytext.insert(diff.position, diff.value);
-        //   } else if (
-        //     diff.type === "delete" &&
-        //     typeof diff.length === "number"
-        //   ) {
-        //     ytext.delete(diff.position, diff.length);
-        //   }
-        // });
+        // ytext.insert(
+        //   ytext.length - 1,
+        //   e.target.value[e.target.value.length - 1],
+        // );
+        diffs.forEach((diff) => {
+          if (diff.type === "add" && typeof diff.value === "string") {
+            ytext.insert(diff.position, diff.value);
+          } else if (
+            diff.type === "delete" &&
+            typeof diff.length === "number"
+          ) {
+            ytext.delete(diff.position, diff.length);
+          }
+        });
       });
       const update = Y.encodeStateAsUpdate(ydocRef.current);
       if (socketRef.current) {
