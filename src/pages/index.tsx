@@ -59,7 +59,7 @@ export default function Home() {
     if (ydocRef.current && diff) {
       const ytext = ydocRef.current.getText("sharedText");
       ydocRef.current?.transact(() => {
-        if (diff.type == "add") {
+        if (diff.type == "add" && diff.character) {
           ytext.insert(diff.position, diff.character);
         } else if (diff.type == "delete") {
           ytext.delete(diff.position, 1);
@@ -78,7 +78,7 @@ export default function Home() {
     }
   };
 
-  function findDiff(prev, current) {
+  function findDiff(prev: string, current: string) {
     if (prev.length + 1 === current.length) {
       for (let i = 0; i < current.length; i++) {
         if (prev[i] !== current[i]) {
