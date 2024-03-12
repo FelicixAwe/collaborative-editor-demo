@@ -54,22 +54,46 @@ export default function Home() {
 
   // Function to handle text changes
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const diff = findDiff(content, e.target.value);
     console.log("About to send an update");
-    if (ydocRef.current) {
+    if (ydocRef.current && diff) {
       const ytext = ydocRef.current.getText("sharedText");
       ydocRef.current?.transact(() => {
-        ytext.delete(0, ytext.length);
-        ytext.insert(0, e.target.value);
+        if (diff.type == "add") {
+          ytext.insert(diff.position, diff.character);
+        } else if (diff.type == "delete") {
+          ytext.delete(diff.position, 1);
+        }
+        // ytext.delete(0, ytext.length);
+        // ytext.insert(0, e.target.value);
       });
       const update = Y.encodeStateAsUpdate(ydocRef.current);
       if (socketRef.current) {
         console.log("socketRef exists when about to send updates");
         socketRef.current.emit("update", update);
+        setContent(e.target.value);
       } else {
         console.log("socketRef doesn't exist when about to send updates");
       }
     }
   };
+
+  function findDiff(prev, current) {
+    if (prev.length + 1 === current.length) {
+      for (let i = 0; i < current.length; i++) {
+        if (prev[i] !== current[i]) {
+          return { type: "add", character: current[i], position: i };
+        }
+      }
+    } else if (prev.length === current.length + 1) {
+      for (let i = 0; i < prev.length; i++) {
+        if (prev[i] !== current[i]) {
+          return { type: "delete", position: i };
+        }
+      }
+    }
+    return null;
+  }
 
   return (
     <textarea
