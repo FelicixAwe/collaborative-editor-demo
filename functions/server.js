@@ -41,6 +41,26 @@ io.on("connection", (socket) => {
   });
 });
 
+let lastAcceptedRequestTime = 0;
+const requestInterval = 25;
+
+app.get("/check-conflicts", (req, res) => {
+  const now = new Date().getTime();
+  console.log(
+    "Time interval:",
+    now - lastAcceptedRequestTime,
+    "Request: ",
+    now - lastAcceptedRequestTime < requestInterval,
+  );
+  if (now - lastAcceptedRequestTime < requestInterval) {
+    return res
+      .status(200)
+      .json({ result: false, message: "Too many requests" });
+  }
+  lastAcceptedRequestTime = now;
+  return res.status(200).json({ result: true, message: "Accepted request." });
+});
+
 // app.listen(port, () => {
 //   console.log(`Server is running on http://localhost:${port}`);
 // });

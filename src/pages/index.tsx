@@ -54,36 +54,55 @@ export default function Home() {
   }, []);
 
   // Function to handle text changes
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleTextChange = async (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
     const newText = e.target.value;
-    const diffs = findDiff(content, newText);
-    console.log("About to send an update");
-    console.log("diffs: ", diffs);
 
-    if (ydocRef.current && diffs.length > 0) {
-      const ytext = ydocRef.current.getText("sharedText");
-      ydocRef.current.transact(() => {
-        // ytext.insert(
-        //   ytext.length - 1,
-        //   e.target.value[e.target.value.length - 1],
-        // );
-        diffs.forEach((diff) => {
-          if (diff.type === "add" && typeof diff.value === "string") {
-            ytext.insert(diff.position, diff.value);
-          } else if (
-            diff.type === "delete" &&
-            typeof diff.length === "number"
-          ) {
-            ytext.delete(diff.position, diff.length);
-          }
+    //Check if accecptable request
+    const fetchCheckConflicts = async () => {
+      const response = await fetch(
+        "https://nodejs-production-1c2e.up.railway.app/check-conflicts",
+        {
+          method: "GET",
+        },
+      );
+      const { result, message } = await response.json();
+      return result;
+      console.log(result);
+    };
+    const checkAccept = await fetchCheckConflicts();
+    // const checkAccept = true;
+    if (checkAccept) {
+      const diffs = findDiff(content, newText);
+      console.log("About to send an update");
+      console.log("diffs: ", diffs);
+
+      if (ydocRef.current && diffs.length > 0) {
+        const ytext = ydocRef.current.getText("sharedText");
+        ydocRef.current.transact(() => {
+          // ytext.insert(
+          //   ytext.length - 1,
+          //   e.target.value[e.target.value.length - 1],
+          // );
+          diffs.forEach((diff) => {
+            if (diff.type === "add" && typeof diff.value === "string") {
+              ytext.insert(diff.position, diff.value);
+            } else if (
+              diff.type === "delete" &&
+              typeof diff.length === "number"
+            ) {
+              ytext.delete(diff.position, diff.length);
+            }
+          });
         });
-      });
-      const update = Y.encodeStateAsUpdate(ydocRef.current);
-      if (socketRef.current) {
-        console.log("Sending updates");
-        socketRef.current.emit("update", update);
+        const update = Y.encodeStateAsUpdate(ydocRef.current);
+        if (socketRef.current) {
+          console.log("Sending updates");
+          socketRef.current.emit("update", update);
+        }
+        setContent(newText); // Update local state to reflect new content
       }
-      setContent(newText); // Update local state to reflect new content
     }
   };
   interface DiffPart {
