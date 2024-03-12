@@ -102,7 +102,10 @@ export default function Home() {
           socketRef.current.emit("update", update);
         }
         setContent(newText); // Update local state to reflect new content
+      } else {
+        setContent(content);
       }
+    } else {
     }
   };
   interface DiffPart {
