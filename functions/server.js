@@ -42,7 +42,7 @@ io.on("connection", (socket) => {
 });
 
 let lastAcceptedRequestTime = 0;
-const requestInterval = 25;
+const requestInterval = 35;
 
 app.get("/check-conflicts", (req, res) => {
   const now = new Date().getTime();
