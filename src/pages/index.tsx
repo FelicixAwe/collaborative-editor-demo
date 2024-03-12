@@ -15,7 +15,7 @@ export default function Home() {
     // Initialize Yjs document
     ydocRef.current = new Y.Doc();
     const yText = ydocRef.current?.getText("sharedText");
-    yText.insert(0, content);
+    // yText.insert(0, content);
 
     // Listen to changes in the Yjs text type
     yText.observe((event) => {
