@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
 import { io, Socket } from "socket.io-client";
+const Diff = require("diff");
 // const SERVER_URL = "http://localhost:8080";
 const SERVER_URL = "https://nodejs-production-1c2e.up.railway.app/";
 
@@ -54,45 +55,66 @@ export default function Home() {
 
   // Function to handle text changes
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const diff = findDiff(content, e.target.value);
+    const newText = e.target.value;
+    const diffs = findDiff(content, newText);
     console.log("About to send an update");
-    if (ydocRef.current && diff) {
+
+    if (ydocRef.current && diffs.length > 0) {
       const ytext = ydocRef.current.getText("sharedText");
-      ydocRef.current?.transact(() => {
-        if (diff.type == "add" && diff.character) {
-          ytext.insert(diff.position, diff.character);
-        } else if (diff.type == "delete") {
-          ytext.delete(diff.position, 1);
-        }
-        // ytext.delete(0, ytext.length);
-        // ytext.insert(0, e.target.value);
+      ydocRef.current.transact(() => {
+        diffs.forEach((diff) => {
+          if (diff.type === "add" && typeof diff.value === "string") {
+            ytext.insert(diff.position, diff.value);
+          } else if (
+            diff.type === "delete" &&
+            typeof diff.length === "number"
+          ) {
+            ytext.delete(diff.position, diff.length);
+          }
+        });
       });
       const update = Y.encodeStateAsUpdate(ydocRef.current);
       if (socketRef.current) {
-        console.log("socketRef exists when about to send updates");
+        console.log("Sending updates");
         socketRef.current.emit("update", update);
-        setContent(e.target.value);
-      } else {
-        console.log("socketRef doesn't exist when about to send updates");
       }
+      setContent(newText); // Update local state to reflect new content
     }
   };
+  interface DiffPart {
+    added?: boolean;
+    removed?: boolean;
+    value: string;
+  }
 
-  function findDiff(prev: string, current: string) {
-    if (prev.length + 1 === current.length) {
-      for (let i = 0; i < current.length; i++) {
-        if (prev[i] !== current[i]) {
-          return { type: "add", character: current[i], position: i };
-        }
+  interface Operation {
+    type: "add" | "delete";
+    position: number;
+    value?: string;
+    length?: number;
+  }
+  function findDiff(prev: string, current: string): Operation[] {
+    const diffs = Diff.diffWords(prev, current);
+    let position = 0; // Initialize a position counter
+    const operations: Operation[] = []; // Store the operations to perform on the Yjs document
+
+    diffs.forEach((part: DiffPart) => {
+      if (part.added) {
+        operations.push({ type: "add", position: position, value: part.value });
+        position += part.value.length; // Move position forward for additions
+      } else if (part.removed) {
+        operations.push({
+          type: "delete",
+          position: position,
+          length: part.value.length,
+        });
+        // Do not move position forward for deletions
+      } else {
+        position += part.value.length; // Move position forward for unchanged parts
       }
-    } else if (prev.length === current.length + 1) {
-      for (let i = 0; i < prev.length; i++) {
-        if (prev[i] !== current[i]) {
-          return { type: "delete", position: i };
-        }
-      }
-    }
-    return null;
+    });
+
+    return operations;
   }
 
   return (
