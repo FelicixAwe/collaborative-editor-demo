@@ -29,7 +29,9 @@ export default function Home() {
     }
 
     const fetchNegotiate = async () => {
-      const response = await fetch("http://localhost:8080/negotiate");
+      const response = await fetch(
+        "https://nodejs-production-1c2e.up.railway.app/negotiate",
+      );
       const data = await response.json();
       setNegotiateData({
         webPubSubUrl: data.url,
@@ -72,26 +74,39 @@ export default function Home() {
       }
     };
   }, []);
-  const handleTextChange = (e: React.FormEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLDivElement;
-
-    if (socketRef.current) {
-      const messageObject = {
-        key: target.className,
-        update: target.textContent,
-        userID: negotiateData.userID,
-      };
-      console.log(
-        "Ready to send to the server: ",
-        JSON.stringify(messageObject),
+  const handleTextChange = async (e: React.FormEvent<HTMLDivElement>) => {
+    const fetchCheckConflicts = async () => {
+      const response = await fetch(
+        "https://nodejs-production-1c2e.up.railway.app/check-conflicts",
+        {
+          method: "GET",
+        },
       );
-      fetch("http://localhost:8080/send-message", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(messageObject),
-      });
-    } else {
-      console.log("socketRef doesn't exist when about to send updates");
+      const { result, message } = await response.json();
+      return result;
+    };
+    const checkAccept = await fetchCheckConflicts();
+    if (checkAccept) {
+      const target = e.target as HTMLDivElement;
+
+      if (socketRef.current) {
+        const messageObject = {
+          key: target.className,
+          update: target.textContent,
+          userID: negotiateData.userID,
+        };
+        console.log(
+          "Ready to send to the server: ",
+          JSON.stringify(messageObject),
+        );
+        fetch("https://nodejs-production-1c2e.up.railway.app/send-message", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(messageObject),
+        });
+      } else {
+        console.log("socketRef doesn't exist when about to send updates");
+      }
     }
   };
 
