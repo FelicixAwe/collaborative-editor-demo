@@ -1,27 +1,15 @@
 // pages/editor.js
 
 import { useEffect, useRef, useState } from "react";
-import * as Y from "yjs";
 import { io, Socket } from "socket.io-client";
 const Diff = require("diff");
 // const SERVER_URL = "http://localhost:8080";
 const SERVER_URL = "https://nodejs-production-1c2e.up.railway.app/";
 
 export default function Home() {
-  const [content, setContent] = useState("");
-  const ydocRef = useRef<Y.Doc | null>(null);
+  const [content, setContent] = useState("Text Editor...");
   const socketRef = useRef<Socket | null>(null);
   useEffect(() => {
-    // Initialize Yjs document
-    ydocRef.current = new Y.Doc();
-    const yText = ydocRef.current?.getText("sharedText");
-    // yText.insert(0, content);
-
-    // Listen to changes in the Yjs text type
-    yText.observe((event) => {
-      setContent(yText.toString());
-    });
-
     // set up socket
     socketRef.current = io(SERVER_URL);
 
@@ -37,16 +25,10 @@ export default function Home() {
 
     socketRef.current.on("update", (update) => {
       console.log("Received an update: ", update);
-      const updateDoc = new Uint8Array(update);
-      if (ydocRef.current) {
-        Y.applyUpdate(ydocRef.current, updateDoc);
-      }
+      setContent(update);
     });
     // Clean up when the component unmounts
     return () => {
-      if (ydocRef.current) {
-        ydocRef.current.destroy();
-      }
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
@@ -57,55 +39,11 @@ export default function Home() {
   const handleTextChange = async (
     e: React.ChangeEvent<HTMLTextAreaElement>,
   ) => {
-    const newText = e.target.value;
-
-    //Check if accecptable request
-    const fetchCheckConflicts = async () => {
-      const response = await fetch(
-        "https://nodejs-production-1c2e.up.railway.app/check-conflicts",
-        {
-          method: "GET",
-        },
-      );
-      const { result, message } = await response.json();
-      return result;
-      console.log(result);
-    };
-    const checkAccept = await fetchCheckConflicts();
-    // const checkAccept = true;
-    if (checkAccept) {
-      const diffs = findDiff(content, newText);
-      console.log("About to send an update");
-      console.log("diffs: ", diffs);
-
-      if (ydocRef.current && diffs.length > 0) {
-        const ytext = ydocRef.current.getText("sharedText");
-        ydocRef.current.transact(() => {
-          // ytext.insert(
-          //   ytext.length - 1,
-          //   e.target.value[e.target.value.length - 1],
-          // );
-          diffs.forEach((diff) => {
-            if (diff.type === "add" && typeof diff.value === "string") {
-              ytext.insert(diff.position, diff.value);
-            } else if (
-              diff.type === "delete" &&
-              typeof diff.length === "number"
-            ) {
-              ytext.delete(diff.position, diff.length);
-            }
-          });
-        });
-        const update = Y.encodeStateAsUpdate(ydocRef.current);
-        if (socketRef.current) {
-          console.log("Sending updates");
-          socketRef.current.emit("update", update);
-        }
-        setContent(newText); // Update local state to reflect new content
-      } else {
-        setContent(content);
-      }
-    } else {
+    console.log("Value changed to: ", e.target.value);
+    if (socketRef.current) {
+      setContent(e.target.value);
+      console.log("Send to socket");
+      socketRef.current.emit("update", e.target.value);
     }
   };
   interface DiffPart {
@@ -148,7 +86,7 @@ export default function Home() {
     <textarea
       value={content}
       onChange={handleTextChange}
-      placeholder="Type something here..."
+      // placeholder="Type something here..."
     />
   );
 }
